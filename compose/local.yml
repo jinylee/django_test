@@ -1,0 +1,112 @@
+#-----------------------------------------------------------------------------------------------------------------------
+# standalon docker-compose yml
+# ref : https://docs.docker.com/compose/compose-file/
+# docker-compose up -d                # 도커 백그라운드 실행
+# docker-compose up --force-recreate  # 도커 컨테이너 새로 생성
+# docker-compose up --build           # 도커 이미지 빌드 후 컨테이너 실행
+# docker-compose build                # 이미지를 빌드만 하고, 컨테이너를 시작하지 않음
+# docker-compose up                   # 이미지가 존재하지 않을 경우에만 빌드하며, 컨테이너를 시작
+# docker-compose down                 # 도커 컴포즈 중지
+#-----------------------------------------------------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------------------------------------------------------
+# configuration version 설정
+#-----------------------------------------------------------------------------------------------------------------------
+version: "3.8"
+
+#-----------------------------------------------------------------------------------------------------------------------
+# service 설정
+# 1) bridge: 단일호스트내에서 여러 컨테이너를 서로 연결
+# 2) overlay: docker cluster 내의 이름있는 네트워크에 대한 연결
+# 3) host : 호스트와 동일한 네트워크에서 컨테이너를 서로 연결
+#-----------------------------------------------------------------------------------------------------------------------
+services:
+  app:
+    image: django_test:${TAG}
+    build: ..
+    ports:
+      - "9001:9001"
+    volumes:
+      - ..:/app
+    depends_on:
+      - mysql
+      - elasticsearch
+      - dynamodb
+      - redis
+    env_file:
+      - .env
+    networks:
+      testnet:
+        aliases:
+          - testwas
+    command: |
+      sh -c "./wait-for-it.sh mysql:3306 --
+             ./wait-for-it.sh dynamodb:20199 --
+             ./wait-for-it.sh redis:6379 --
+             ./wait-for-it.sh elasticsearch:9200 --
+             python manage.py runserver 0.0.0.0:9001"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.6.4
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - http.port=9200
+      - "ES_JAVA_OPTS=-Xms1024m -Xmx2048m"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      testnet:
+        aliases:
+          - elasticsearch
+
+  dynamodb:
+    image: dwmkerr/dynamodb
+    command: "-sharedDb -port 20199 -dbPath /var/lib/dynamodb"
+    volumes:
+      - dynamodb-data:/var/lib/dynamodb
+    networks:
+      testnet:
+        aliases:
+          - dynamodb
+
+  redis:
+    image: redis:3.2-alpine
+    volumes:
+      - redis-data:/var/lib/redis/data
+    networks:
+      testnet:
+        aliases:
+          - redis
+
+  mysql:
+    image: mysql:5.6.34
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    env_file:
+      - .env
+    command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci
+    networks:
+      testnet:
+        aliases:
+          - mysql
+
+volumes:
+  mysql-data:
+  redis-data:
+  dynamodb-data:
+  elasticsearch-data:
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+# service 설정
+# 1) bridge: 단일호스트내에서 여러 컨테이너를 서로 연결
+# 2) overlay: docker cluster 내의 이름있는 네트워크에 대한 연결
+# 3) host : 호스트와 동일한 네트워크에서 컨테이너를 서로 연결
+#  docker network create --driver=bridge  testnet
+#-----------------------------------------------------------------------------------------------------------------------
+networks:
+  testnet:
+    external: true
