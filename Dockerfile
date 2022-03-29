@@ -51,6 +51,10 @@ ENV LANG ko_KR.UTF-8
 ENV LANGUAGE ko_KR.UTF-8
 ENV LC_ALL ko_KR.UTF-8
 
+# ARG 설정
+ARG ENV
+
+RUN echo "deploy env : ${ENV}"
 # ----------------------------------------------------------------------------------------------------------------------
 # WORKDIR 은 RUN, CMD, ENTRYPOINT에서 설정한 실행파일이 실행될 디렉토리 위치 임
 # ----------------------------------------------------------------------------------------------------------------------
@@ -88,8 +92,8 @@ RUN useradd -m app
 # ----------------------------------------------------------------------------------------------------------------------
 
 # python freeze 도구를 통해 생성된 requirements.txt를 통해 라이브러리를 설치하는 과정
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
+COPY requirements/ /tmp/requirements/
+RUN pip install -r /tmp/requirements/${ENV}.txt
 
 
 # ----------------------------------------------------------------------------------------------------------------------

@@ -6,12 +6,12 @@ $> django-admin startproject 프로젝트명
 참고) https://docs.djangoproject.com/en/4.0/topics/settings/
 참고) https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-from unipath import Path
+from pathlib import Path
 import os
 
 # 프로젝트 기본 경로.ex) parent.parent => ..
-BASE_DIR = Path(__file__)
 
+BASE_DIR = Path(__file__).parent.parent.parent
 
 # 상용인 경우 아래의 링크 참고하여 설정해야함
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/

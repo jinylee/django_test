@@ -18,24 +18,24 @@ help:
 up:
 ifndef ENV
 	@echo 'env: local'
-	docker-compose -f compose/local.yml up
+	docker-compose -f compose/local.yml up &
 else
 	@echo 'env: $(ENV)'
-	docker-compose -f compose/$$ENV.yml up
+	docker-compose -f compose/$$ENV.yml up &
 endif
 
 down:
 ifndef ENV
 	@echo 'env: local'
-	docker-compose -f compose/local.yml down
+	docker-compose -f compose/local.yml down &
 else
 	@echo 'env: $(ENV)'
-	docker-compose -f compose/$$ENV.yml down
+	docker-compose -f compose/$$ENV.yml down &
 endif
 
+# Use double dollar sign for escaping dollar sign
+#env $$(./docker_env_to_shell_env.sh .envs/local_django_env | xargs) python manage.py $$CMD
 run:
-	# Use double dollar sign for escaping dollar sign
-	#env $$(./docker_env_to_shell_env.sh .envs/local_django_env | xargs) python manage.py $$CMD
 ifndef ENV
 	@echo 'env: local'
 	python manage.py runserver --settings=mysite.settings.local 0.0.0.0:8000
